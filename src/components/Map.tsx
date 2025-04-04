@@ -229,7 +229,10 @@ const Map = ({
       });
       
       marker.addListener("click", () => {
-        infoWindow.open(mapInstanceRef.current, marker);
+        infoWindow.open({
+          map: mapInstanceRef.current,
+          anchor: marker
+        });
       });
       
       markersRef.current.push(marker);

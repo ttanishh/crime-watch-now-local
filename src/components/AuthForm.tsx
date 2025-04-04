@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { loginUser, registerUser } from "@/utils/api";
 import { Loader2 } from "lucide-react";
+import { AuthResponse } from "@/types/auth";
 
 // Login form schema
 const loginSchema = z.object({
@@ -61,7 +62,7 @@ const AuthForm = () => {
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
       setIsLoading(true);
-      const result = await loginUser(values.email, values.password);
+      const result = await loginUser(values.email, values.password) as AuthResponse;
       
       toast({
         title: "Login Successful",
@@ -84,7 +85,7 @@ const AuthForm = () => {
   const onRegisterSubmit = async (values: RegisterFormValues) => {
     try {
       setIsLoading(true);
-      const result = await registerUser(values.name, values.email, values.password);
+      const result = await registerUser(values.name, values.email, values.password) as AuthResponse;
       
       toast({
         title: "Registration Successful",

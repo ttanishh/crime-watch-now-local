@@ -193,6 +193,29 @@ declare namespace google {
         addListener(eventName: string, handler: Function): MapsEventListener;
       }
 
+      class Autocomplete {
+        constructor(input: HTMLInputElement, options?: AutocompleteOptions);
+        setComponentRestrictions(restrictions: AutocompleteComponentRestrictions): void;
+        setTypes(types: string[]): void;
+        setBounds(bounds: LatLngBounds): void;
+        setOptions(options: AutocompleteOptions): void;
+        getPlace(): PlaceResult;
+        bindTo(bindKey: string, target: any): void;
+        addListener(eventName: string, handler: Function): MapsEventListener;
+      }
+
+      interface AutocompleteOptions {
+        bounds?: LatLngBounds;
+        componentRestrictions?: AutocompleteComponentRestrictions;
+        placeIdOnly?: boolean;
+        strictBounds?: boolean;
+        types?: string[];
+      }
+
+      interface AutocompleteComponentRestrictions {
+        country: string | string[];
+      }
+
       interface SearchBoxOptions {
         bounds?: LatLngBounds;
       }
@@ -200,9 +223,11 @@ declare namespace google {
       interface PlaceResult {
         geometry: {
           location: LatLng;
+          viewport?: LatLngBounds;
         };
         name: string;
         formatted_address: string;
+        place_id: string;
       }
     }
 
