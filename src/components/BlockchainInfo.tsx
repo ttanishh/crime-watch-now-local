@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw, XCircle, Shield } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { getTransactionStatus } from "@/utils/blockchain";
+import { getAuthUser } from "@/utils/web3Auth";
 
 interface BlockchainInfoProps {
   reportId: string;
@@ -16,6 +17,7 @@ const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const authUser = getAuthUser();
   
   // Check status on component mount
   useEffect(() => {
@@ -59,11 +61,19 @@ const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          Blockchain Verification
-          {status === "confirmed" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-          {status === "pending" && <AlertCircle className="h-4 w-4 text-amber-500" />}
-          {status === "failed" && <XCircle className="h-4 w-4 text-red-500" />}
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            Blockchain Verification
+            {status === "confirmed" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            {status === "pending" && <AlertCircle className="h-4 w-4 text-amber-500" />}
+            {status === "failed" && <XCircle className="h-4 w-4 text-red-500" />}
+          </div>
+          {authUser && (
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <Shield className="h-3 w-3" />
+              Authenticated
+            </div>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -77,6 +87,13 @@ const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
             <div className="font-medium">TX Hash:</div>
             <div className="col-span-2 font-mono text-xs truncate">{transactionHash}</div>
           </div>
+          
+          {authUser && (
+            <div className="grid grid-cols-3 gap-1">
+              <div className="font-medium">Verified By:</div>
+              <div className="col-span-2">{authUser.phoneNumber}</div>
+            </div>
+          )}
           
           <div className="grid grid-cols-3 gap-1">
             <div className="font-medium">Status:</div>

@@ -1,17 +1,27 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import EmergencyReportForm from "@/components/EmergencyReportForm";
 import PhoneAuth from "@/components/PhoneAuth";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Shield, Info } from "lucide-react";
+import { Shield, Info, CheckCircle2 } from "lucide-react";
+import { getAuthUser, isAuthenticated } from "@/utils/web3Auth";
 
 const EmergencyReport = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   
+  // Check if user is already authenticated on mount
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const user = getAuthUser();
+      setIsAuth(true);
+      setPhoneNumber(user?.phoneNumber || null);
+    }
+  }, []);
+  
   const handleAuthSuccess = (phone: string) => {
-    setIsAuthenticated(true);
+    setIsAuth(true);
     setPhoneNumber(phone);
   };
   
@@ -28,18 +38,18 @@ const EmergencyReport = () => {
           
           <Alert>
             <Info className="h-4 w-4" />
-            <AlertTitle>Important Information</AlertTitle>
+            <AlertTitle>Blockchain-Secured Reporting</AlertTitle>
             <AlertDescription>
               This emergency reporting system securely records incidents on a blockchain for transparency and immutability. 
-              No wallet or cryptocurrency is required to submit reports.
+              Your phone number is verified and linked to your reports, but no cryptocurrency wallet is required.
             </AlertDescription>
           </Alert>
           
-          {!isAuthenticated ? (
+          {!isAuth ? (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Verify Your Phone Number</h2>
+              <h2 className="text-xl font-semibold">Secure Authentication</h2>
               <p className="text-muted-foreground">
-                Before submitting an emergency report, please verify your phone number for accountability.
+                Before submitting an emergency report, please verify your phone number and complete blockchain authentication.
               </p>
               <PhoneAuth onAuthSuccess={handleAuthSuccess} />
               <div className="pt-4 text-center">
@@ -50,10 +60,14 @@ const EmergencyReport = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                <p className="text-green-800 text-sm">
-                  Verified phone: <strong>{phoneNumber}</strong>
-                </p>
+              <div className="bg-green-50 border border-green-200 rounded-md p-4 flex gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-green-800 font-medium">Authenticated Securely</p>
+                  <p className="text-green-700 text-sm">
+                    Phone: <strong>{phoneNumber}</strong> - Verified with blockchain authentication
+                  </p>
+                </div>
               </div>
               <EmergencyReportForm />
             </div>

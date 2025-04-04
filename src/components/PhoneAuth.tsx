@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Phone, Check } from "lucide-react";
+import { Loader2, Phone, Check, Shield } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { signAuthMessage, storeAuthUser, generateNonce } from "@/utils/web3Auth";
 
 interface PhoneAuthProps {
   onAuthSuccess: (phoneNumber: string) => void;
@@ -14,8 +15,9 @@ interface PhoneAuthProps {
 const PhoneAuth = ({ onAuthSuccess }: PhoneAuthProps) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [step, setStep] = useState<"phone" | "otp" | "blockchain">("phone");
   const [loading, setLoading] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { toast } = useToast();
 
   const handleSendCode = async () => {
@@ -58,10 +60,10 @@ const PhoneAuth = ({ onAuthSuccess }: PhoneAuthProps) => {
       // For demo purposes, accept 123456 as valid code
       if (otpCode === "123456") {
         toast({
-          title: "Authentication Successful",
-          description: "Your phone number has been verified.",
+          title: "Phone Verification Successful",
+          description: "Proceeding with blockchain authentication.",
         });
-        onAuthSuccess(phoneNumber);
+        setStep("blockchain");
       } else {
         toast({
           title: "Invalid Code",
@@ -74,10 +76,48 @@ const PhoneAuth = ({ onAuthSuccess }: PhoneAuthProps) => {
     }, 1500);
   };
 
+  const handleBlockchainAuth = async () => {
+    setIsAuthenticating(true);
+    
+    try {
+      // Generate a nonce for this authentication attempt
+      const nonce = generateNonce();
+      
+      // In a real app, this would trigger a wallet to sign a message
+      // For our demo, we'll simulate this process
+      const signedHash = await signAuthMessage(phoneNumber);
+      
+      // Store the authenticated user
+      const user = storeAuthUser(phoneNumber, signedHash);
+      
+      toast({
+        title: "Authentication Successful",
+        description: "Your phone has been verified and securely linked on the blockchain.",
+        variant: "default",
+      });
+      
+      // Notify parent component
+      onAuthSuccess(phoneNumber);
+    } catch (error) {
+      console.error("Authentication failed:", error);
+      toast({
+        title: "Authentication Failed",
+        description: "Failed to authenticate with blockchain. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">Phone Authentication</CardTitle>
+        <CardTitle className="text-xl font-bold">
+          {step === "blockchain" 
+            ? "Blockchain Authentication" 
+            : "Phone Authentication"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {step === "phone" ? (
@@ -96,7 +136,7 @@ const PhoneAuth = ({ onAuthSuccess }: PhoneAuthProps) => {
               We'll send a verification code to this number
             </p>
           </div>
-        ) : (
+        ) : step === "otp" ? (
           <div className="space-y-4">
             <p className="text-sm">Enter the verification code sent to {phoneNumber}</p>
             <div className="flex justify-center py-2">
@@ -121,22 +161,55 @@ const PhoneAuth = ({ onAuthSuccess }: PhoneAuthProps) => {
               Change phone number
             </Button>
           </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center py-6">
+              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                <Shield className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <p className="text-center">
+              Your phone number ({phoneNumber}) has been verified.
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Authenticate securely via blockchain technology to continue.
+              No wallet or cryptocurrency is required.
+            </p>
+          </div>
         )}
       </CardContent>
       <CardFooter>
         <Button 
           className="w-full"
-          onClick={step === "phone" ? handleSendCode : handleVerifyCode}
-          disabled={loading || (step === "phone" && phoneNumber.length < 10) || (step === "otp" && otpCode.length < 6)}
+          onClick={
+            step === "phone" 
+              ? handleSendCode 
+              : step === "otp" 
+                ? handleVerifyCode 
+                : handleBlockchainAuth
+          }
+          disabled={
+            loading || isAuthenticating ||
+            (step === "phone" && phoneNumber.length < 10) || 
+            (step === "otp" && otpCode.length < 6)
+          }
         >
-          {loading ? (
+          {loading || isAuthenticating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {step === "phone" ? "Sending..." : "Verifying..."}
+              {step === "phone" 
+                ? "Sending..." 
+                : step === "otp" 
+                  ? "Verifying..." 
+                  : "Authenticating..."}
             </>
           ) : (
             <>
-              {step === "phone" ? "Send Verification Code" : "Verify Code"}
+              {step === "phone" 
+                ? "Send Verification Code" 
+                : step === "otp" 
+                  ? "Verify Code" 
+                  : "Complete Authentication"}
               {!loading && <Check className="ml-2 h-4 w-4" />}
             </>
           )}
