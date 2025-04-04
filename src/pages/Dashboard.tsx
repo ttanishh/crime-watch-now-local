@@ -128,49 +128,53 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        <TabsContent value="map" className="mt-0">
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-4 bg-muted/40">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-alert" />
-                  <span className="font-medium text-sm">
-                    Displaying {filteredCrimes.length} {filteredCrimes.length === 1 ? 'crime' : 'crimes'}
-                  </span>
+        {/* The issue was that we had TabsContent components outside of the main Tabs component */}
+        {/* We need to wrap all TabsContent components inside the same Tabs component as their TabsTriggers */}
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "map" | "list")}>
+          <TabsContent value="map" className="mt-0">
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="p-4 bg-muted/40">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-alert" />
+                    <span className="font-medium text-sm">
+                      Displaying {filteredCrimes.length} {filteredCrimes.length === 1 ? 'crime' : 'crimes'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <Map crimes={filteredCrimes} interactive={false} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="list" className="mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>Crime Reports</CardTitle>
-              <CardDescription>
-                Showing {filteredCrimes.length} {filteredCrimes.length === 1 ? 'report' : 'reports'} {crimeFilter !== 'all' ? `for ${crimeFilter}` : ''}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-kavach-500"></div>
-                </div>
-              ) : filteredCrimes.length === 0 ? (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground">No crime reports found matching your criteria</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredCrimes.map((crime) => (
-                    <CrimeCard key={crime.id} crime={crime} />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <Map crimes={filteredCrimes} interactive={false} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="list" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Crime Reports</CardTitle>
+                <CardDescription>
+                  Showing {filteredCrimes.length} {filteredCrimes.length === 1 ? 'report' : 'reports'} {crimeFilter !== 'all' ? `for ${crimeFilter}` : ''}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center py-10">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-kavach-500"></div>
+                  </div>
+                ) : filteredCrimes.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground">No crime reports found matching your criteria</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredCrimes.map((crime) => (
+                      <CrimeCard key={crime.id} crime={crime} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

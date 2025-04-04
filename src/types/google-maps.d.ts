@@ -8,6 +8,9 @@ declare namespace google {
       panTo(latLng: LatLng | LatLngLiteral): void;
       getBounds(): LatLngBounds;
       getZoom(): number;
+      controls: any[][];
+      fitBounds(bounds: LatLngBounds): void;
+      addListener(eventName: string, handler: Function): MapsEventListener;
     }
 
     class Marker {
@@ -16,6 +19,7 @@ declare namespace google {
       setPosition(latLng: LatLng | LatLngLiteral): void;
       setVisible(visible: boolean): void;
       addListener(eventName: string, handler: Function): MapsEventListener;
+      getTitle(): string | undefined;
     }
 
     class InfoWindow {
@@ -51,6 +55,7 @@ declare namespace google {
       mapTypeControl?: boolean;
       zoomControl?: boolean;
       styles?: any[];
+      mapId?: string;  // Added mapId property
     }
 
     interface MarkerOptions {
@@ -61,6 +66,7 @@ declare namespace google {
       visible?: boolean;
       draggable?: boolean;
       animation?: Animation;
+      zIndex?: number; // Added zIndex property
     }
 
     interface InfoWindowOptions {
@@ -115,7 +121,8 @@ declare namespace google {
       anchor?: Point;
     }
 
-    interface Size {
+    class Size {
+      constructor(width: number, height: number);
       width: number;
       height: number;
       equals(other: Size): boolean;
@@ -177,5 +184,41 @@ declare namespace google {
       addListener(instance: any, eventName: string, handler: Function): MapsEventListener;
       removeListener(listener: MapsEventListener): void;
     };
+
+    namespace places {
+      class SearchBox {
+        constructor(input: HTMLInputElement, options?: SearchBoxOptions);
+        setBounds(bounds: LatLngBounds): void;
+        getPlaces(): PlaceResult[];
+        addListener(eventName: string, handler: Function): MapsEventListener;
+      }
+
+      interface SearchBoxOptions {
+        bounds?: LatLngBounds;
+      }
+
+      interface PlaceResult {
+        geometry: {
+          location: LatLng;
+        };
+        name: string;
+        formatted_address: string;
+      }
+    }
+
+    const ControlPosition: {
+      TOP_CENTER: number;
+      TOP_LEFT: number;
+      TOP_RIGHT: number;
+      BOTTOM_CENTER: number;
+      BOTTOM_LEFT: number;
+      BOTTOM_RIGHT: number;
+      LEFT_CENTER: number;
+      RIGHT_CENTER: number;
+    };
+
+    interface MapMouseEvent {
+      latLng: LatLng;
+    }
   }
 }
