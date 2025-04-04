@@ -15,7 +15,7 @@ const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
   const [status, setStatus] = useState<"pending" | "confirmed" | "failed" | "not_found">("pending");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Check status on component mount
   useEffect(() => {
