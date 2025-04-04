@@ -24,6 +24,8 @@ export interface Crime {
     status: BlockchainStatus;
     timestamp: string;
   };
+  verificationCount?: number; // Added for verification badges
+  isAnonymous?: boolean; // Added for anonymous reporting
 }
 
 export enum CrimeType {
@@ -85,3 +87,19 @@ export interface EmergencyReport {
   }[];
   blockchainTxHash: string;
 }
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'alert' | 'success' | 'info';
+  timestamp: Date;
+  read: boolean;
+  relatedTo?: {
+    type: 'crime' | 'emergency' | 'system';
+    id?: string;
+  };
+}
+
+// Add the TooltipProvider, TooltipTrigger, TooltipContent components
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

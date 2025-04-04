@@ -1,14 +1,16 @@
 
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Map from "@/components/Map";
 import ReportForm from "@/components/ReportForm";
 import BlockchainInfo from "@/components/BlockchainInfo";
+import AnonymousSwitch from "@/components/AnonymousSwitch";
 import { Crime } from "@/types";
 import { AlertTriangle, Check, FileText, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Report = () => {
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -18,6 +20,7 @@ const Report = () => {
   } | undefined>();
   
   const [submittedReport, setSubmittedReport] = useState<Crime | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -26,7 +29,13 @@ const Report = () => {
   };
   
   const handleReportSuccess = (crime: Crime) => {
-    setSubmittedReport(crime);
+    // Add isAnonymous flag to the report metadata
+    const reportWithAnonymousFlag = {
+      ...crime,
+      isAnonymous: isAnonymous
+    };
+    
+    setSubmittedReport(reportWithAnonymousFlag);
     setSelectedLocation(undefined);
     
     // Display success message
@@ -39,6 +48,10 @@ const Report = () => {
 
   const handleEmergencyClick = () => {
     navigate("/emergency");
+  };
+
+  const handleAnonymousToggle = (checked: boolean) => {
+    setIsAnonymous(checked);
   };
   
   return (
@@ -75,6 +88,18 @@ const Report = () => {
                   <h3 className="text-sm font-medium text-green-800">Report Submitted Successfully</h3>
                   <div className="mt-2 text-sm text-green-700">
                     <p>Your report has been submitted and will be reviewed by authorities.</p>
+                    
+                    {submittedReport.isAnonymous && (
+                      <div className="mt-2 bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <p className="text-blue-800 flex items-center gap-1.5">
+                          <Link className="h-4 w-4" />
+                          <span className="font-medium">Anonymous Report</span>
+                        </p>
+                        <p className="text-blue-700 text-xs mt-1">
+                          Your identity has been protected. Only blockchain verification data is publicly visible.
+                        </p>
+                      </div>
+                    )}
                     
                     {submittedReport.evidence && submittedReport.evidence.length > 0 && (
                       <div className="mt-4 border-t border-green-200 pt-4">
@@ -136,9 +161,16 @@ const Report = () => {
             </div>
             
             <div>
+              <Card className="mb-4">
+                <CardContent className="pt-6">
+                  <AnonymousSwitch onToggle={handleAnonymousToggle} />
+                </CardContent>
+              </Card>
+              
               <ReportForm 
                 selectedLocation={selectedLocation} 
                 onSubmitSuccess={handleReportSuccess}
+                isAnonymous={isAnonymous}
               />
             </div>
           </div>

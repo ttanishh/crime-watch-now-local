@@ -6,15 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Navbar from "@/components/Navbar";
 import Map from "@/components/Map";
 import CrimeCard from "@/components/CrimeCard";
+import CrimeHeatmap from "@/components/CrimeHeatmap";
+import VerificationBadge from "@/components/VerificationBadge";
 import { Crime, CrimeType } from "@/types";
 import { fetchCrimes } from "@/utils/api";
-import { AlertTriangle, Shield, CheckCircle2, BarChart3, MapPin } from "lucide-react";
+import { AlertTriangle, Shield, CheckCircle2, BarChart3, MapPin, LayersIcon } from "lucide-react";
 
 const Dashboard = () => {
   const [crimes, setCrimes] = useState<Crime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [crimeFilter, setCrimeFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"map" | "list">("map");
+  const [viewMode, setViewMode] = useState<"map" | "list" | "heatmap">("map");
   
   useEffect(() => {
     const loadCrimes = async () => {
@@ -45,6 +47,17 @@ const Dashboard = () => {
   const getCrimeTypeCount = (type: CrimeType) => {
     return crimes.filter(crime => crime.type === type).length;
   };
+
+  // Function to handle verification updates
+  const handleVerificationUpdate = (reportId: string, newCount: number) => {
+    setCrimes(prevCrimes => 
+      prevCrimes.map(crime => 
+        crime.id === reportId 
+          ? { ...crime, verificationCount: newCount } 
+          : crime
+      )
+    );
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -72,10 +85,11 @@ const Dashboard = () => {
               </SelectContent>
             </Select>
             
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "map" | "list")} className="w-[180px]">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="map">Map View</TabsTrigger>
-                <TabsTrigger value="list">List View</TabsTrigger>
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "map" | "list" | "heatmap")} className="w-[250px]">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="map">Map</TabsTrigger>
+                <TabsTrigger value="list">List</TabsTrigger>
+                <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -128,9 +142,7 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        {/* The issue was that we had TabsContent components outside of the main Tabs component */}
-        {/* We need to wrap all TabsContent components inside the same Tabs component as their TabsTriggers */}
-        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "map" | "list")}>
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "map" | "list" | "heatmap")}>
           <TabsContent value="map" className="mt-0">
             <Card className="overflow-hidden">
               <CardContent className="p-0">
@@ -167,12 +179,25 @@ const Dashboard = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredCrimes.map((crime) => (
-                      <CrimeCard key={crime.id} crime={crime} />
+                      <div key={crime.id} className="space-y-2">
+                        <CrimeCard crime={crime} />
+                        <div className="flex justify-end px-4 pb-2">
+                          <VerificationBadge 
+                            reportId={crime.id} 
+                            verificationCount={crime.verificationCount || 0}
+                            onVerificationUpdated={(count) => handleVerificationUpdate(crime.id, count)}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="heatmap" className="mt-0">
+            <CrimeHeatmap />
           </TabsContent>
         </Tabs>
       </div>
