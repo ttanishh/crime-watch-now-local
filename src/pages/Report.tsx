@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Map from "@/components/Map";
 import ReportForm from "@/components/ReportForm";
 import { Crime } from "@/types";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, Check, FileText } from "lucide-react";
 
 const Report = () => {
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -49,12 +49,32 @@ const Report = () => {
               <div className="flex-shrink-0">
                 <Check className="h-5 w-5 text-green-500" />
               </div>
-              <div className="ml-3">
+              <div className="ml-3 w-full">
                 <h3 className="text-sm font-medium text-green-800">Report Submitted Successfully</h3>
                 <div className="mt-2 text-sm text-green-700">
                   <p>Your report has been submitted and will be reviewed by authorities.</p>
+                  
+                  {submittedReport.evidence && submittedReport.evidence.length > 0 && (
+                    <div className="mt-4 border-t border-green-200 pt-4">
+                      <h4 className="font-medium flex items-center gap-1 mb-2">
+                        <FileText className="h-4 w-4" />
+                        Evidence Submitted ({submittedReport.evidence.length})
+                      </h4>
+                      <div className="grid gap-2">
+                        {submittedReport.evidence.map((item, i) => (
+                          <div key={i} className="bg-white/60 p-2 rounded-md text-green-800 flex items-center">
+                            <span className="font-medium mr-1">#{i+1}:</span> {item.description}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs">
+                        Your evidence has been securely stored. A record hash will be generated on the blockchain for verification.
+                      </p>
+                    </div>
+                  )}
+                  
                   <button
-                    className="mt-2 text-green-600 hover:text-green-800 font-medium"
+                    className="mt-4 text-green-600 hover:text-green-800 font-medium"
                     onClick={() => setSubmittedReport(null)}
                   >
                     Submit another report

@@ -1,4 +1,3 @@
-
 export interface Crime {
   id: string;
   type: CrimeType;
@@ -13,6 +12,12 @@ export interface Crime {
   status: CrimeStatus;
   reportedBy?: string;
   media?: string[];
+  evidence?: {
+    fileUrl: string;
+    fileType: string;
+    description: string;
+    timestamp: string;
+  }[];
 }
 
 export enum CrimeType {

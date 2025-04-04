@@ -68,17 +68,28 @@ export const fetchCrimes = async (): Promise<Crime[]> => {
 };
 
 export const submitCrime = async (crimeData: Omit<Crime, 'id' | 'status'>): Promise<Crime> => {
-  // In a real app, this would be an API POST request
+  // In a real app, this would interact with a blockchain network
+  // For a blockchain implementation:
+  // 1. Hash the evidence files and store hashes on-chain
+  // 2. Upload actual files to IPFS or similar storage
+  // 3. Create a smart contract transaction to record the report
+  
   return new Promise((resolve) => {
     setTimeout(() => {
+      // Simulate blockchain transaction hash
+      const mockTransactionHash = `0x${Array.from({length: 40}, () => 
+        Math.floor(Math.random() * 16).toString(16)).join('')}`;
+      
+      console.log(`Mock blockchain transaction: ${mockTransactionHash}`);
+      
       const newCrime: Crime = {
         ...crimeData,
         id: `crime-${Date.now()}`,
-        status: CrimeStatus.REPORTED
+        status: CrimeStatus.REPORTED,
       };
       mockCrimes.push(newCrime);
       resolve(newCrime);
-    }, 800);
+    }, 1500); // Longer delay to simulate blockchain transaction
   });
 };
 
