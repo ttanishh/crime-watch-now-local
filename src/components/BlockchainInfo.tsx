@@ -1,36 +1,50 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw, XCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { getTransactionStatus } from "@/utils/blockchain";
 
 interface BlockchainInfoProps {
   reportId: string;
+  transactionHash: string;
 }
 
-const BlockchainInfo = ({ reportId }: BlockchainInfoProps) => {
-  const [status, setStatus] = useState<"pending" | "confirmed" | "failed">("pending");
+const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
+  const [status, setStatus] = useState<"pending" | "confirmed" | "failed" | "not_found">("pending");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-
-  // This would be replaced with actual blockchain connection code
-  const mockTransactionHash = `0x${Array.from({length: 40}, () => 
-    Math.floor(Math.random() * 16).toString(16)).join('')}`;
   
-  const refreshStatus = () => {
-    setIsRefreshing(true);
+  // Check status on component mount
+  useEffect(() => {
+    checkStatus();
+    // Set up periodic checking
+    const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, [transactionHash]);
+  
+  const checkStatus = async () => {
+    if (!transactionHash) return;
     
-    // Simulate checking blockchain status
-    setTimeout(() => {
-      setStatus("confirmed");
-      setIsRefreshing(false);
-      
-      toast({
-        title: "Blockchain Status Updated",
-        description: "Transaction has been confirmed on the blockchain.",
-      });
-    }, 2000);
+    const currentStatus = await getTransactionStatus(transactionHash);
+    setStatus(currentStatus);
+    
+    // Stop periodic checking if we reach a final state
+    if (currentStatus === "confirmed" || currentStatus === "failed") {
+      clearInterval(interval);
+    }
+  };
+  
+  const refreshStatus = async () => {
+    setIsRefreshing(true);
+    await checkStatus();
+    setIsRefreshing(false);
+    
+    toast({
+      title: "Blockchain Status Updated",
+      description: `Transaction is now ${status}.`,
+    });
   };
   
   return (
@@ -40,6 +54,7 @@ const BlockchainInfo = ({ reportId }: BlockchainInfoProps) => {
           Blockchain Verification
           {status === "confirmed" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
           {status === "pending" && <AlertCircle className="h-4 w-4 text-amber-500" />}
+          {status === "failed" && <XCircle className="h-4 w-4 text-red-500" />}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -51,7 +66,7 @@ const BlockchainInfo = ({ reportId }: BlockchainInfoProps) => {
           
           <div className="grid grid-cols-3 gap-1">
             <div className="font-medium">TX Hash:</div>
-            <div className="col-span-2 font-mono text-xs truncate">{mockTransactionHash}</div>
+            <div className="col-span-2 font-mono text-xs truncate">{transactionHash}</div>
           </div>
           
           <div className="grid grid-cols-3 gap-1">
@@ -65,6 +80,9 @@ const BlockchainInfo = ({ reportId }: BlockchainInfoProps) => {
               )}
               {status === "failed" && (
                 <span className="text-red-600 font-medium">Failed</span>
+              )}
+              {status === "not_found" && (
+                <span className="text-gray-600 font-medium">Not Found</span>
               )}
             </div>
           </div>
@@ -93,7 +111,11 @@ const BlockchainInfo = ({ reportId }: BlockchainInfoProps) => {
               className="text-xs"
               asChild
             >
-              <a href="#" target="_blank" rel="noopener noreferrer">
+              <a 
+                href={`https://explorer.example.com/tx/${transactionHash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 View on Explorer
                 <ExternalLink className="ml-1 h-3 w-3" />
               </a>

@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import EmergencyReport from "./pages/EmergencyReport";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report" element={<Report />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/emergency" element={<EmergencyReport />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

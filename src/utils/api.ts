@@ -1,5 +1,5 @@
-
-import { Crime, CrimeType, CrimeStatus } from "@/types";
+import { Crime, CrimeType, CrimeStatus, BlockchainStatus } from "@/types";
+import { submitToBlockchain } from "./blockchain";
 
 // Mock data for development
 const mockCrimes: Crime[] = [
@@ -68,32 +68,41 @@ export const fetchCrimes = async (): Promise<Crime[]> => {
 };
 
 export const submitCrime = async (crimeData: Omit<Crime, 'id' | 'status'>): Promise<Crime> => {
-  // In a real app, this would interact with a blockchain network
-  // For a blockchain implementation:
-  // 1. Hash the evidence files and store hashes on-chain
-  // 2. Upload actual files to IPFS or similar storage
-  // 3. Create a smart contract transaction to record the report
-  
+  // This now integrates with our blockchain utility
   return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate blockchain transaction hash
-      const mockTransactionHash = `0x${Array.from({length: 40}, () => 
-        Math.floor(Math.random() * 16).toString(16)).join('')}`;
+    setTimeout(async () => {
+      // Submit data hash to blockchain
+      const txHash = await submitToBlockchain({
+        type: "CRIME_REPORT",
+        reportType: crimeData.type,
+        description: crimeData.description,
+        location: crimeData.location,
+        date: crimeData.date,
+        time: crimeData.time,
+        evidenceCount: crimeData.evidence?.length || 0,
+        timestamp: new Date().toISOString(),
+      });
       
-      console.log(`Mock blockchain transaction: ${mockTransactionHash}`);
+      console.log(`Blockchain transaction submitted: ${txHash}`);
       
       const newCrime: Crime = {
         ...crimeData,
         id: `crime-${Date.now()}`,
         status: CrimeStatus.REPORTED,
+        blockchainInfo: {
+          transactionHash: txHash,
+          status: BlockchainStatus.PENDING,
+          timestamp: new Date().toISOString()
+        }
       };
+      
       mockCrimes.push(newCrime);
       resolve(newCrime);
     }, 1500); // Longer delay to simulate blockchain transaction
   });
 };
 
-// Authentication mock functions
+// Authentication mock functions - now including phone verification
 export const loginUser = async (email: string, password: string) => {
   // Simulate API call delay
   return new Promise((resolve) => {
@@ -133,6 +142,24 @@ export const registerUser = async (name: string, email: string, password: string
         });
       } else {
         throw new Error("Registration failed. Please fill all fields.");
+      }
+    }, 1000);
+  });
+};
+
+export const verifyPhoneNumber = async (phoneNumber: string, code: string) => {
+  // Simulate API call delay
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      // Mock implementation - in real app this would verify the code
+      if (code === "123456") { // Demo code
+        resolve({
+          success: true,
+          phoneNumber,
+          verified: true
+        });
+      } else {
+        reject(new Error("Invalid verification code"));
       }
     }, 1000);
   });
