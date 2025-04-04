@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw, XCircle } from "lucide-react";
@@ -15,13 +15,20 @@ const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
   const [status, setStatus] = useState<"pending" | "confirmed" | "failed" | "not_found">("pending");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  const intervalRef = useRef<number | null>(null);
   
   // Check status on component mount
   useEffect(() => {
     checkStatus();
     // Set up periodic checking
     const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
-    return () => clearInterval(interval);
+    intervalRef.current = interval;
+    
+    return () => {
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [transactionHash]);
   
   const checkStatus = async () => {
@@ -32,7 +39,9 @@ const BlockchainInfo = ({ reportId, transactionHash }: BlockchainInfoProps) => {
     
     // Stop periodic checking if we reach a final state
     if (currentStatus === "confirmed" || currentStatus === "failed") {
-      clearInterval(interval);
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+      }
     }
   };
   
