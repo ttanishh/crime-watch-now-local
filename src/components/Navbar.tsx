@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Menu, LogIn, MapPin, BarChart3, X } from "lucide-react";
+import { Shield, Menu, LogIn, MapPin, BarChart3, X, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserRole } from "@/utils/firebase";
+import { UserRole, logoutUser } from "@/utils/firebase";
 import NavbarExtras from "./NavbarExtras";
 
 const Navbar = () => {
