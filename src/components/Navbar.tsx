@@ -1,12 +1,17 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Shield, Menu, LogIn, MapPin, BarChart3, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserRole } from "@/utils/firebase";
+import NavbarExtras from "./NavbarExtras";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser, userRole } = useAuth();
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -30,24 +35,41 @@ const Navbar = () => {
                 Home
               </Button>
             </Link>
-            <Link to="/report">
-              <Button variant={isActive("/report") ? "default" : "ghost"} size="sm">
-                <MapPin className="mr-1 h-4 w-4" />
-                Report Crime
-              </Button>
-            </Link>
-            <Link to="/dashboard">
-              <Button variant={isActive("/dashboard") ? "default" : "ghost"} size="sm">
-                <BarChart3 className="mr-1 h-4 w-4" />
-                Dashboard
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button variant="outline" size="sm">
-                <LogIn className="mr-1 h-4 w-4" />
-                Login
-              </Button>
-            </Link>
+            
+            {/* Show Report Crime only to regular users */}
+            {(!currentUser || userRole === UserRole.USER) && (
+              <Link to={currentUser ? "/report" : "/auth"}>
+                <Button variant={isActive("/report") ? "default" : "ghost"} size="sm">
+                  <MapPin className="mr-1 h-4 w-4" />
+                  Report Crime
+                </Button>
+              </Link>
+            )}
+            
+            {/* Show Dashboard to all authenticated users */}
+            {currentUser && (
+              <Link to="/dashboard">
+                <Button variant={isActive("/dashboard") ? "default" : "ghost"} size="sm">
+                  <BarChart3 className="mr-1 h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+            
+            {/* Authentication */}
+            {!currentUser && (
+              <Link to="/auth">
+                <Button variant="outline" size="sm">
+                  <LogIn className="mr-1 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
+            
+            {/* Show NavbarExtras if user is logged in */}
+            {currentUser && (
+              <NavbarExtras />
+            )}
           </div>
           
           {/* Mobile Navigation Button */}
@@ -71,33 +93,58 @@ const Navbar = () => {
                 Home
               </Button>
             </Link>
-            <Link to="/report" onClick={toggleMenu}>
-              <Button 
-                variant={isActive("/report") ? "default" : "ghost"}
-                className="w-full justify-start"
-              >
-                <MapPin className="mr-2 h-4 w-4" />
-                Report Crime
-              </Button>
-            </Link>
-            <Link to="/dashboard" onClick={toggleMenu}>
-              <Button 
-                variant={isActive("/dashboard") ? "default" : "ghost"}
-                className="w-full justify-start"
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-            </Link>
-            <Link to="/auth" onClick={toggleMenu}>
+            
+            {/* Show Report Crime only to regular users */}
+            {(!currentUser || userRole === UserRole.USER) && (
+              <Link to={currentUser ? "/report" : "/auth"} onClick={toggleMenu}>
+                <Button 
+                  variant={isActive("/report") ? "default" : "ghost"}
+                  className="w-full justify-start"
+                >
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Report Crime
+                </Button>
+              </Link>
+            )}
+            
+            {/* Show Dashboard to all authenticated users */}
+            {currentUser && (
+              <Link to="/dashboard" onClick={toggleMenu}>
+                <Button 
+                  variant={isActive("/dashboard") ? "default" : "ghost"}
+                  className="w-full justify-start"
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+            
+            {/* Authentication */}
+            {!currentUser ? (
+              <Link to="/auth" onClick={toggleMenu}>
+                <Button 
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+            ) : (
               <Button 
                 variant="outline"
-                className="w-full justify-start"
+                className="w-full justify-start text-red-500"
+                onClick={() => {
+                  toggleMenu();
+                  logoutUser();
+                  navigate("/");
+                }}
               >
-                <LogIn className="mr-2 h-4 w-4" />
-                Login
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
               </Button>
-            </Link>
+            )}
           </div>
         </div>
       )}

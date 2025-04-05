@@ -1,35 +1,40 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NotificationsPanel from "./NotificationsPanel";
 import { Button } from "@/components/ui/button";
-import { isAuthenticated, logout } from "@/utils/web3Auth";
 import { useNavigate } from "react-router-dom";
 import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { logoutUser } from "@/utils/firebase";
 
 const NavbarExtras = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   
-  const handleLogout = () => {
-    logout();
-    setIsLoggedIn(false);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      navigate("/");
+    } catch (error) {
+      console.error("Failed to logout:", error);
+    }
   };
   
   const handleLogin = () => {
-    navigate("/emergency");
+    navigate("/auth");
   };
   
   return (
     <div className="flex items-center gap-2">
       <NotificationsPanel />
       
-      {isLoggedIn ? (
+      {currentUser ? (
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost"
             size="icon"
             className="relative"
+            onClick={() => navigate("/dashboard")}
           >
             <User className="h-5 w-5" />
           </Button>

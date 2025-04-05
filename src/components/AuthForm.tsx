@@ -1,33 +1,31 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { z } from "zod";
+import { useNavigate } from "react-router-dom";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { loginUser, registerUser } from "@/utils/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
-import { AuthResponse } from "@/types/auth";
+import { useToast } from "@/components/ui/use-toast";
+import { UserRole, registerUser, loginUser } from "@/utils/firebase";
+import PhoneAuth from "./PhoneAuth";
 
-// Login form schema
+// Schema for login form
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
 });
 
-// Registration form schema
+// Schema for registration form with additional fields
 const registerSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
+  role: z.enum([UserRole.USER, UserRole.ADMIN, UserRole.SUPERADMIN])
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -35,8 +33,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("login");
+  const [activeTab, setActiveTab] = useState("login");
+  const [showPhoneAuth, setShowPhoneAuth] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -47,74 +47,82 @@ const AuthForm = () => {
     },
   });
   
-  // Register form
+  // Registration form
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",
       password: "",
-      confirmPassword: "",
+      role: UserRole.USER,
     },
   });
   
-  // Handle login submission
+  // Handle login form submission
   const onLoginSubmit = async (values: LoginFormValues) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const result = await loginUser(values.email, values.password) as AuthResponse;
-      
+      await loginUser(values.email, values.password);
       toast({
-        title: "Login Successful",
-        description: `Welcome back, ${result.user.name}!`,
+        title: "Success",
+        description: "You have been logged in successfully.",
       });
-      
-      // In a real app, you would store the token and redirect
-    } catch (error) {
+      navigate("/dashboard");
+    } catch (error: any) {
       toast({
-        variant: "destructive",
         title: "Login Failed",
-        description: error instanceof Error ? error.message : "Please check your credentials and try again.",
+        description: error.message || "Failed to log in. Please check your credentials.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Handle registration submission
+  // Handle registration form submission
   const onRegisterSubmit = async (values: RegisterFormValues) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const result = await registerUser(values.name, values.email, values.password) as AuthResponse;
-      
+      await registerUser(values.email, values.password, values.name, values.role);
       toast({
         title: "Registration Successful",
-        description: `Welcome to Kavach, ${result.user.name}!`,
+        description: "Your account has been created. Please verify your phone number.",
       });
-      
-      // In a real app, you would store the token and redirect
-    } catch (error) {
+      setShowPhoneAuth(true);
+    } catch (error: any) {
       toast({
-        variant: "destructive",
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Please check your information and try again.",
+        description: error.message || "Failed to create account. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
   
+  // Handle phone verification success
+  const handlePhoneAuthSuccess = (phoneNumber: string) => {
+    toast({
+      title: "Phone Verified",
+      description: `Your phone number (${phoneNumber}) has been verified successfully.`,
+    });
+    navigate("/dashboard");
+  };
+  
+  if (showPhoneAuth) {
+    return <PhoneAuth onAuthSuccess={handlePhoneAuthSuccess} />;
+  }
+  
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">Welcome to Kavach</CardTitle>
-        <CardDescription className="text-center">
-          Join our community to report and track crime in your area
-        </CardDescription>
+        <CardTitle className="text-2xl text-center">
+          {activeTab === "login" ? "Welcome Back" : "Create an Account"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
@@ -135,6 +143,7 @@ const AuthForm = () => {
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={loginForm.control}
                   name="password"
@@ -142,12 +151,13 @@ const AuthForm = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
+                        <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
@@ -178,6 +188,7 @@ const AuthForm = () => {
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={registerForm.control}
                   name="email"
@@ -191,6 +202,7 @@ const AuthForm = () => {
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={registerForm.control}
                   name="password"
@@ -198,28 +210,34 @@ const AuthForm = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
+                        <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Password must be at least 6 characters
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={registerForm.control}
-                  name="confirmPassword"
+                  name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel>Role</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
+                        <select 
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                          {...field}
+                        >
+                          <option value={UserRole.USER}>Citizen</option>
+                          <option value={UserRole.ADMIN}>Law Enforcement</option>
+                          <option value={UserRole.SUPERADMIN}>Government Official</option>
+                        </select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
@@ -235,24 +253,19 @@ const AuthForm = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-2">
-        <div className="text-sm text-center text-muted-foreground">
-          {activeTab === "login" ? (
-            <p>
-              Don't have an account?{" "}
-              <Button variant="link" className="p-0" onClick={() => setActiveTab("register")}>
-                Register
-              </Button>
-            </p>
-          ) : (
-            <p>
-              Already have an account?{" "}
-              <Button variant="link" className="p-0" onClick={() => setActiveTab("login")}>
-                Login
-              </Button>
-            </p>
-          )}
-        </div>
+      <CardFooter className="flex justify-center">
+        <p className="text-sm text-muted-foreground">
+          {activeTab === "login" 
+            ? "Don't have an account? " 
+            : "Already have an account? "}
+          <Button 
+            variant="link" 
+            className="p-0 h-auto text-primary" 
+            onClick={() => setActiveTab(activeTab === "login" ? "register" : "login")}
+          >
+            {activeTab === "login" ? "Register" : "Login"}
+          </Button>
+        </p>
       </CardFooter>
     </Card>
   );
