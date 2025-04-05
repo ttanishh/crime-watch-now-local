@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Check, Files, X } from "lucide-react"; // Added X import here
+import { Loader2, Check, Files, X } from "lucide-react";
 import { Crime, CrimeType } from "@/types";
 import { submitCrime } from "@/utils/api";
 import EvidenceUpload from "./EvidenceUpload";
@@ -41,9 +40,10 @@ interface ReportFormProps {
     address?: string;
   };
   onSubmitSuccess?: (crime: Crime) => void;
+  isAnonymous?: boolean;
 }
 
-const ReportForm = ({ selectedLocation, onSubmitSuccess }: ReportFormProps) => {
+const ReportForm = ({ selectedLocation, onSubmitSuccess, isAnonymous = false }: ReportFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [evidenceList, setEvidenceList] = useState<{
@@ -52,7 +52,6 @@ const ReportForm = ({ selectedLocation, onSubmitSuccess }: ReportFormProps) => {
   }[]>([]);
   const { toast } = useToast();
   
-  // Get today's date in yyyy-MM-dd format
   const today = new Date().toISOString().split('T')[0];
   
   const form = useForm<ReportFormValues>({
@@ -93,11 +92,12 @@ const ReportForm = ({ selectedLocation, onSubmitSuccess }: ReportFormProps) => {
         time: values.time,
         location: selectedLocation,
         evidence: evidenceList.map(item => ({
-          fileUrl: URL.createObjectURL(item.file), // In real app, this would be an IPFS/cloud URL
+          fileUrl: URL.createObjectURL(item.file),
           fileType: item.file.type,
           description: item.description,
           timestamp: new Date().toISOString(),
         })),
+        isAnonymous: isAnonymous,
       };
       
       const result = await submitCrime(crimeData);
@@ -112,7 +112,6 @@ const ReportForm = ({ selectedLocation, onSubmitSuccess }: ReportFormProps) => {
         ),
       });
       
-      // Reset form
       form.reset({
         type: CrimeType.OTHER,
         description: "",
@@ -121,7 +120,6 @@ const ReportForm = ({ selectedLocation, onSubmitSuccess }: ReportFormProps) => {
       });
       setEvidenceList([]);
       
-      // Notify parent component
       if (onSubmitSuccess) {
         onSubmitSuccess(result);
       }
